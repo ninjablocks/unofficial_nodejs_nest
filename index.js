@@ -32,14 +32,17 @@
     var defaultNestUserAgent = 'Nest/3.0.15 (iOS) os=6.0 platform=iPad3,1';
 
     var fanModes = {
-        'auto': 'auto',
-        'on': 'on'
+        'auto'       : 'auto',
+        'on'         : 'on',
+        'off'        : 'off',
+        'duty-cycle' : 'duty-cycle'
     };
 
     var temperatureTypes = {
-      'cool' : 'cool',
-      'heat' : 'heat',
-      'range' : 'range'
+      'cool'  : 'cool',
+      'heat'  : 'heat',
+      'range' : 'range',
+      'off'   : 'off'
     };
 
 
@@ -388,10 +391,12 @@
         validateStatus();
 
         if (typeof tempC === 'undefined') {
-            if (!isDeviceId(deviceId)) {
-                deviceId = getFirstDeviceId();
-                tempC = deviceId;
-            }
+            tempC = deviceId;
+            deviceId = null;
+        }
+
+        if (!deviceId) {
+            deviceId = getFirstDeviceId();
         }
 
         // likely passed in a F temp, so just convert it.
@@ -400,11 +405,9 @@
         }
 
         var body = {
-            'target_change_pending':true,
             'target_temperature':tempC
         };
 
-        body = JSON.stringify(body);
         var headers = {
             'X-nl-base-version':nestExports.lastStatus['shared'][deviceId]['$version'],
             'Content-Type':'application/json'
@@ -412,13 +415,14 @@
 
         nestPost({
             path:'/v2/put/shared.' + deviceId,
-            body:body,
+            body:JSON.stringify(body),
             headers:headers,
             done:function (data) {
                 nestExports.logger.debug('Set temperature');
             }
         });
     };
+
 
     var setAway = function (away, structureId) {
         validateStatus();
@@ -456,7 +460,7 @@
         setAway(false, structureId);
     };
 
-    var setFanMode = function (deviceId, fanMode) {
+    var setFanMode = function (deviceId, fanMode, time) {
         validateStatus();
 
         deviceId = deviceId || getFirstDeviceId();
@@ -468,13 +472,19 @@
             throw new Error('Invalid fanMode: ' + fanMode);
         }
 
-        var body = JSON.stringify({
+        var body = {
             'fan_mode': fanMode
-        });
+        };
+
+        if (fanMode === 'duty-cycle') {
+            body.fan_timer_duration = time;
+            body.fan_timer_timeout = ((Date.now() + time)/1000);
+        }
+
 
         var postData = {
             path:'/v2/put/device.' + deviceId,
-            body:body,
+            body:JSON.stringify(body),
             done:function (data) {
                 nestExports.logger.debug('Set fan mode to ' + fanMode);
             }
@@ -504,7 +514,8 @@
         }
 
         var body = JSON.stringify({
-            'target_temperature_type': tempType
+            'target_temperature_type': tempType,
+            'target_change_pending' : true
         });
 
         var headers = {
@@ -615,6 +626,7 @@
         'setTemperature':setTemperature,
         'setAway':setAway,
         'setHome':setHome,
+        'setFanMode':setFanMode,
         'setFanModeOn':setFanModeOn,
         'setFanModeAuto':setFanModeAuto,
         'setTargetTemperatureType':setTargetTemperatureType,
