@@ -169,7 +169,7 @@
                     allData = allData.join('');
                     if (allData && typeof allData === 'string' && allData.length > 0) {
                         try { allData = JSON.parse(allData); } catch(ex) {
-                            nestExports.logger.error('Error parsing JSON', { exception: ex });
+                            nestExports.logger.error('post', { exception: ex });
                             allData = null;
                         }
                     } else {
@@ -211,7 +211,7 @@
                     allData.push(data);
                 });
                 response.on('error', function (err) {
-                   nestExports.logger.error('Error setting fetching information', { exception: err });
+                   nestExports.logger.error('get', { exception: err });
                     if (done) {
                         done(null);
                     }
@@ -222,7 +222,7 @@
 
                     if (allData && typeof allData === 'string' && allData.length > 0) {
                         try { allData = JSON.parse(allData); } catch(ex) {
-                            nestExports.logger.error('Error parsing JSON', { exception: ex });
+                            nestExports.logger.error('get', { exception: ex });
                             allData = null;
                         }
                     } else {
@@ -240,7 +240,7 @@
     var fetchCurrentStatus = function (done) {
         nestGet('/v2/mobile/' + nestSession.user, function (data) {
             if (!data) {
-                return nestExports.logger.error('Error to retrieve status');
+                return nestExports.logger.error('fetchCurrentStatus');
             }
 
             nestExports.lastStatus = data;
@@ -531,7 +531,7 @@
                 nestExports.logger.debug('Set temperature mode to  ' + tempType);
             },
             error: function(res, error) {
-                nestExports.logger.error('Error setting temperature mode to  ' + tempType, { exception: error });
+                nestExports.logger.error('setTargetTemperatureType' + tempType, { exception: error });
             }
 
         };
